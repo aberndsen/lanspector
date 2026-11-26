@@ -166,3 +166,11 @@ def test_cli_error_exit_codes(tmp_path: pathlib.Path) -> None:
         main(["compare", "--database", str(tmp_path / "nope.db"), "--log_level", "ERROR"])
     ).is_equal_to(1)
     assert_that(main(["shares", "--servers", "[localhost]", "--log_level", "ERROR"])).is_equal_to(0)
+
+
+def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify ``lanspector --version`` prints the installed package version and exits cleanly."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert_that(exc_info.value.code).is_equal_to(0)
+    assert_that(capsys.readouterr().out.strip()).is_not_empty()

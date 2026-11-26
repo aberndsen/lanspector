@@ -11,7 +11,7 @@ from jsonargparse import auto_cli
 from loguru import logger
 from tqdm import tqdm
 
-from lanspector.crawler import _path_to_db_name, crawl, crawl_driver
+from lanspector.crawler import _package_version, _path_to_db_name, crawl, crawl_driver
 from lanspector.datatypes import LogLevel
 from lanspector.reader import CrawlReader
 from lanspector.reporting import generate_fileshare_report, generate_open_shares_summary_report
@@ -88,6 +88,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         args=list(argv) if argv is not None else None,
         as_positional=False,
+        version=_package_version(),
         description=(
             "LANspector: cross-platform LAN & Windows fileshare auditing, "
             "SOX permission-diff Excel reporting, and interactive Plotly storage sunbursts. "
