@@ -1,0 +1,30 @@
+# Sample LANspector YAML configuration for `lanspector report`
+#
+# Usage:
+#   lanspector report --config examples/report_config.yaml
+
+# One or more LANspector SQLite crawl databases to summarize
+databases:
+  - finance_crawl.db
+
+# Destination Excel audit workbook
+output: finance_audit_report.xlsx
+
+# Optional crawl timestamp table name (null = latest crawl)
+table: null
+
+# Row limit per detail worksheet (null or 0 = unlimited)
+limit: 500
+
+# Collapse subordinate permission bits (e.g. MR -> M; Full Control dominates lower grants)
+use_permission_hierarchy: true
+
+# Include or skip specific worksheets
+skip_files_report: false
+skip_user_owner_report: false
+report_pii: true
+
+# Generate an Open Shares rollup instead of a full fileshare audit workbook
+open_shares: false
+
+log_level: INFO

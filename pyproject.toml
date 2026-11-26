@@ -1,0 +1,163 @@
+[build-system]
+requires = ["hatchling>=1.25.0", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lanspector"
+dynamic = ["version"]
+description = "Cross-platform LAN & Windows fileshare auditor: harvest file metadata and NTFS/POSIX ACLs into SQLite, generate compressed parent-vs-child SOX permission-diff Excel reports, and explore storage with interactive Plotly sunburst charts and an optional Dash web app."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [
+    { name = "Aaron Berndsen", email = "aaron.berndsen@gmail.com" },
+]
+maintainers = [
+    { name = "Aaron Berndsen", email = "aaron.berndsen@gmail.com" },
+]
+keywords = [
+    "acl",
+    "active-directory",
+    "audit",
+    "compliance",
+    "dash",
+    "data-cleanup",
+    "data-governance",
+    "excel-audit-report",
+    "fileshare",
+    "lan-audit",
+    "ntfs",
+    "permissions",
+    "pii-detection",
+    "plotly",
+    "sox",
+    "storage-analytics",
+    "sunburst",
+    "windows-shares",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Filesystems",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "docstring-parser>=0.16",
+    "jsonargparse>=4.30.0",
+    "loguru>=0.7.0",
+    "numpy>=2.0.0",
+    "openpyxl>=3.1.0",
+    "pandas>=2.1.0",
+    "plotly>=6.0.0",
+    "pywin32>=306; sys_platform == 'win32'",
+    "sqlalchemy>=2.0.0",
+    "tqdm>=4.66.0",
+    "xlsxwriter>=3.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/aberndsen/lanspector"
+Documentation = "https://aberndsen.github.io/lanspector/"
+"Enterprise Consulting & Support" = "https://aberndsen.github.io/lanspector/consulting.html"
+Repository = "https://github.com/aberndsen/lanspector"
+Issues = "https://github.com/aberndsen/lanspector/issues"
+"Author LinkedIn" = "https://www.linkedin.com/in/aberndsen/"
+
+[project.optional-dependencies]
+dashboard = [
+    "dash>=3.0.0",
+    "flask-caching>=2.3.0",
+]
+pii = [
+    "nltk>=3.9.0",
+]
+docs = [
+    "numpydoc>=1.7.0",
+    "pydata-sphinx-theme>=0.15.0",
+    "sphinx>=7.4.0",
+]
+all = [
+    "dash>=3.0.0",
+    "flask-caching>=2.3.0",
+    "nltk>=3.9.0",
+]
+
+[project.scripts]
+lanspector = "lanspector.cli:main"
+
+[dependency-groups]
+dev = [
+    "assertpy>=1.1",
+    "dash>=3.0.0",
+    "flask-caching>=2.3.0",
+    "numpydoc>=1.7.0",
+    "pydata-sphinx-theme>=0.15.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.8.0",
+    "sphinx>=7.4.0",
+    "ty>=0.0.1a1",
+]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lanspector"]
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+fallback-version = "0.0.0"
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",  # handled by formatter / docstrings
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-v", "--cov=lanspector", "--cov-report=term-missing"]
+
+[tool.coverage.run]
+source = ["src/lanspector"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.ty.environment]
+python-version = "3.12"

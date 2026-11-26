@@ -1,0 +1,50 @@
+# Sample LANspector YAML configuration for `lanspector crawl`
+#
+# Usage:
+#   lanspector crawl --config examples/crawl_config.yaml
+#
+# Override any field from the command line:
+#   lanspector crawl --config examples/crawl_config.yaml --limit 100
+#
+# Generate a fresh template containing all options and defaults:
+#   lanspector crawl --print_config > my_crawl.yaml
+
+# Required: directory or Windows UNC share to crawl (alternatively set `driver`)
+path: /path/to/fileshare
+
+# Output SQLite database (.db / .sqlite / .sqlite3), .csv, or .xlsx
+# If omitted on the CLI, defaults to ./<sanitized_target_name>.db
+fout: finance_crawl.db
+
+# Objects to harvest: "fd" (files + directories), "d" (directories only), or "f" (files only)
+scantype: fd
+
+# Harvest effective NTFS (Windows) or POSIX (Linux/macOS) permissions
+permissions: true
+
+# Query Active Directory for group membership of discovered ACLs (Windows only)
+crawl_acls: true
+
+# Optional MD5 checksum limit in bytes (e.g. 10485760 = 10 MB); null disables MD5 hashing
+max_md5: 10485760
+
+# Optional caps for stepwise ("peeling away the layers") crawls; 0 = unlimited
+limit: 0
+max_depth: 0
+
+# Scan supported file contents (.txt, .csv, .xlsx) for PII keywords
+detect_pii: false
+use_ner: false
+
+# Automatically generate the multi-sheet Excel SOX & storage-cleanup summary report
+# Written alongside `fout` as <fout_stem>_<YYYYMMDDTHHMMSS>.xlsx
+summarize: true
+
+# Optional standalone offline Plotly sunburst HTML output path
+sunburst_html: finance_sunburst.html
+
+# Resume an interrupted crawl (scan_end IS NULL in CRAWL_INFO) instead of starting over
+resume: false
+
+# Logging verbosity: ERROR, WARNING, INFO, DEBUG, TRACE
+log_level: INFO

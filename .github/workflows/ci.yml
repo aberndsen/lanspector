@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  static-check:
+    name: Static Checks (lint & typecheck)
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv & Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Bootstrap environment
+        run: make bootstrap UV_SYNC_FLAGS="--frozen"
+
+      - name: Run static checks
+        run: make static-check
+
+  dynamic-check:
+    name: Dynamic Checks (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv & Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Bootstrap environment
+        run: make bootstrap UV_SYNC_FLAGS="--frozen"
+
+      - name: Run tests and verify docs build
+        run: make dynamic-check
+
+  build:
+    name: Build Docs & Package
+    needs: [static-check, dynamic-check]
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv & Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Bootstrap environment
+        run: make bootstrap UV_SYNC_FLAGS="--frozen"
+
+      - name: Fetch latest tags for documentation version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          for i in 1 2 3 4 5; do
+            git fetch --tags --force
+            if [ -n "$(git tag --points-at HEAD 'v*')" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Build documentation and distributions
+        run: make build
+
+      - name: Smoke-test built wheel
+        run: |
+          WHEEL=$(ls dist/*.whl)
+          uv run --isolated --no-project --with "$WHEEL" python -c "import lanspector; print(lanspector.__version__)"
+          uv run --isolated --no-project --with "$WHEEL" lanspector --help
+
+      - name: Upload package distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: lanspector-dist
+          path: dist/
+          if-no-files-found: error
+
+      - name: Upload HTML documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: lanspector-docs
+          path: docs/build/html/
+          if-no-files-found: error
+
+      - name: Add .nojekyll for GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: touch docs/build/html/.nojekyll
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build/html
+
+  deploy-docs:
+    name: Deploy Docs to GitHub Pages
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

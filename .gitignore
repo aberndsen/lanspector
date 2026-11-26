@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+coverage_html_report/
+
+# Linters & type checkers
+.ruff_cache/
+.mypy_cache/
+.ty_cache/
+
+# Docs build
+docs/build/
+docs/source/_build/
+
+# Crawl artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / IDE / Local assistant notes
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+CLAUDE.md

@@ -1,0 +1,10 @@
+# LANspector
+
+> Cross-platform LAN & Windows fileshare auditor for SOX permission-diff reporting and Plotly storage sunburst analytics.
+
+- Repository: https://github.com/aberndsen/lanspector
+- Docs: https://aberndsen.github.io/lanspector/
+- Usage Guide: https://aberndsen.github.io/lanspector/usage.html
+- SOX Auditing Guide: https://aberndsen.github.io/lanspector/auditing_guide.html
+- Sunburst & Dashboard Guide: https://aberndsen.github.io/lanspector/sunburst_dashboard_guide.html
+- API Reference: https://aberndsen.github.io/lanspector/api/index.html

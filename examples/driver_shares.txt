@@ -1,0 +1,17 @@
+# Sample LANspector batch driver file for `lanspector crawl --driver examples/driver_shares.txt`
+#
+# Blank lines and lines starting with '#' are ignored.
+# Each entry can be:
+#   1. A local directory or Windows UNC fileshare path
+#   2. A fileserver hostname (Windows: crawls all non-admin shares on that server)
+#   3. "DN: <DomainName>" (Windows: enumerates domain computers and crawls their shares)
+
+# Example local or UNC shares:
+/srv/shares/finance
+\\filesrv01.corp.example\accounting
+
+# Example fileserver hostname (Windows):
+# filesrv02
+
+# Example Active Directory domain discovery (Windows):
+# DN: CORP

@@ -1,0 +1,14 @@
+# LANspector — Full Reference Summary
+
+LANspector is an MIT-licensed Python package (`pip install lanspector`) for crawling Windows SMB shares and POSIX filesystems, harvesting metadata (`atime`, `ctime`, `mtime`, size, owner, MD5, PII indicators) and NTFS/POSIX ACLs into timestamped SQLite databases, generating losslessly compressed parent-vs-child SOX permission-diff Excel reports, and visualizing storage with interactive Plotly sunburst charts and an optional Dash 3+ web application (`lanspector[dashboard]`).
+
+## CLI Subcommands
+
+- `lanspector crawl --path <dir> --fout <db> [--summarize true] [--sunburst_html out.html]`
+- `lanspector report --databases '[a.db]' --output audit.xlsx [--open_shares true]`
+- `lanspector sunburst --database a.db --output sunburst.html [--color_by age|size]`
+- `lanspector compare --database a.db [--output drift.xlsx]`
+- `lanspector dashboard-prep --databases '[a.db]' --dashboard_db landash.sqlite`
+- `lanspector dashboard --dashboard_db landash.sqlite --port 8050`
+- `lanspector gui [--database a.db]`
+- `lanspector shares --servers '[filesrv01]'`
