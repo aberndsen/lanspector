@@ -88,6 +88,8 @@ def sample_tree(tmp_path_factory: pytest.TempPathFactory) -> SampleTree:
         detect_pii_content=True,
         crawl_acls=False,
     )
+    # Re-apply deterministic 2021 timestamp in case the OS updated atime during dirs_db reads
+    os.utime(deep / "old_report_v2.txt", (old_epoch, old_epoch))
     crawl(
         root,
         scantype="fd",

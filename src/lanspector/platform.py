@@ -12,11 +12,12 @@ from __future__ import annotations
 import contextlib
 import datetime
 import os
+import pathlib
 import re
 import socket
 import stat
 import sys
-from typing import Any
+from typing import IO, Any
 
 import numpy as np
 import pandas as pd
@@ -343,6 +344,50 @@ def is_ip_address(address: str) -> bool:
         ``True`` when *address* matches dotted-quad IPv4 format.
     """
     return IP_REGEX.match(address) is not None
+
+
+def open_read_noatime(
+    path: str | pathlib.Path,
+    *,
+    binary: bool = True,
+    encoding: str | None = None,
+    errors: str | None = None,
+) -> IO[Any]:
+    """Open *path* for reading without updating ``atime`` when the OS supports ``O_NOATIME``.
+
+    On Linux filesystems mounted with ``relatime`` or ``strictatime``, reading files
+    for MD5 hashing or PII scanning with plain :func:`open` updates ``atime`` on disk.
+    Using ``os.O_NOATIME`` preserves original access timestamps when permitted, falling
+    back gracefully to :func:`open` if ``O_NOATIME`` is unavailable or disallowed.
+
+    Parameters
+    ----------
+    path
+        Filesystem path to open for reading.
+    binary
+        Open in binary mode (``"rb"``) when ``True``, otherwise text mode (``"r"``).
+    encoding
+        Optional text encoding used when ``binary=False``.
+    errors
+        Optional error handler used when ``binary=False``.
+
+    Returns
+    -------
+    typing.IO[typing.Any]
+        Open readable file object.
+    """
+    noatime_flag = getattr(os, "O_NOATIME", 0)
+    if noatime_flag:
+        try:
+            fd = os.open(path, os.O_RDONLY | noatime_flag)
+            if binary:
+                return os.fdopen(fd, "rb")
+            return os.fdopen(fd, "r", encoding=encoding, errors=errors)
+        except OSError:
+            pass
+    if binary:
+        return open(path, "rb")
+    return open(path, encoding=encoding, errors=errors)
 
 
 def smb_socket_connect(server: str, port: int = SMB_PORT, timeout: float = 2.0) -> bool:

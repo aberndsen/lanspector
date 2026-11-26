@@ -54,6 +54,7 @@ from lanspector.platform import (
     get_effective_permissions,
     get_fileshare_permissions,
     get_path_owner,
+    open_read_noatime,
     strip_long_path_prefix,
 )
 from lanspector.settings import CrawlSettings
@@ -794,7 +795,7 @@ def md5sum(
     """
     digest = hashlib.md5()
     try:
-        with open(filename, "rb") as handle:
+        with open_read_noatime(filename, binary=True) as handle:
             blocks = 0
             while True:
                 chunk = handle.read(blocksize)

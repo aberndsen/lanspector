@@ -11,6 +11,7 @@ from loguru import logger
 
 from lanspector.constants import PII_KEYWORDS, PII_PROPER_NAME_LABEL, PII_SNIPPET_LENGTH
 from lanspector.datatypes import PiiFinding
+from lanspector.platform import open_read_noatime
 
 _PII_WORD_REGEXES: tuple[tuple[int, re.Pattern[str]], ...] = tuple(
     (idx, re.compile(rf"(?P<word>{pattern})", re.I))
@@ -141,7 +142,9 @@ def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
     if suffix in _TEXT_EXTENSIONS:
         try:
             lines: list[str] = []
-            with file_path.open("r", encoding="utf-8", errors="ignore") as handle:
+            with open_read_noatime(
+                file_path, binary=False, encoding="utf-8", errors="ignore"
+            ) as handle:
                 for _ in range(max_rows):
                     line = handle.readline()
                     if not line:
@@ -154,19 +157,20 @@ def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
 
     if suffix in _EXCEL_EXTENSIONS:
         try:
-            wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
-            try:
-                chunks: list[str] = []
-                for sheet in wb.worksheets:
-                    for row_idx, row in enumerate(sheet.iter_rows(values_only=True)):
-                        if row_idx >= max_rows:
-                            break
-                        for val in row:
-                            if val is not None:
-                                chunks.append(str(val))
-                return " ".join(chunks)
-            finally:
-                wb.close()
+            with open_read_noatime(file_path, binary=True) as handle:
+                wb = openpyxl.load_workbook(handle, read_only=True, data_only=True)
+                try:
+                    chunks: list[str] = []
+                    for sheet in wb.worksheets:
+                        for row_idx, row in enumerate(sheet.iter_rows(values_only=True)):
+                            if row_idx >= max_rows:
+                                break
+                            for val in row:
+                                if val is not None:
+                                    chunks.append(str(val))
+                    return " ".join(chunks)
+                finally:
+                    wb.close()
         except Exception as exc:
             logger.debug("Could not read Excel file {}: {}", file_path, exc)
             return ""
