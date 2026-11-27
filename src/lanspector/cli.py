@@ -11,6 +11,7 @@ from jsonargparse import auto_cli
 from loguru import logger
 from tqdm import tqdm
 
+from lanspector.constants import XLSX_SAFE_OPTIONS
 from lanspector.crawler import _package_version, _path_to_db_name, crawl, crawl_driver
 from lanspector.datatypes import LogLevel
 from lanspector.reader import CrawlReader
@@ -154,7 +155,9 @@ def run_compare(settings: CompareSettings) -> int:
 
     if settings.output is not None:
         settings.output.parent.mkdir(parents=True, exist_ok=True)
-        with pd.ExcelWriter(settings.output, engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(
+            settings.output, engine="xlsxwriter", engine_kwargs={"options": XLSX_SAFE_OPTIONS}
+        ) as writer:
             for section, df in diffs.items():
                 df.to_excel(writer, sheet_name=section[:31], index=False)
         print(f"Wrote comparison workbook to {settings.output.resolve()}")
@@ -206,7 +209,6 @@ def run_crawl(settings: CrawlSettings) -> int:
         scantype=settings.scantype,
         permissions=settings.permissions,
         fout=resolved_fout,
-        tablename=settings.tablename,
         max_md5=settings.max_md5,
         skip_size=settings.skip_size,
         crawl_acls=settings.crawl_acls,

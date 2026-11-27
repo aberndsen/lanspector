@@ -24,8 +24,13 @@ DASHBOARD_TABLES: frozenset[str] = frozenset(
 )
 
 TIMESTAMP_FORMAT = "%Y%m%dT%H%M%S"
+SAFE_TABLE_NAME_REGEX: re.Pattern[str] = re.compile(r"^[A-Za-z0-9_]+$")
 DEFAULT_CHUNKSIZE = 900
 PROGRESS_LOG_INTERVAL = 10_000
+XLSX_SAFE_OPTIONS: dict[str, bool] = {
+    "strings_to_formulas": False,
+    "strings_to_urls": False,
+}
 
 SUPPORTED_DB_EXTENSIONS: tuple[str, ...] = (".db", ".sqlite", ".sqlite3")
 SUPPORTED_OUTPUT_EXTENSIONS: tuple[str, ...] = (".csv", ".xlsx", ".db", ".sqlite", ".sqlite3")
@@ -154,6 +159,8 @@ PII_KEYWORDS: tuple[str, ...] = (
     PII_PROPER_NAME_LABEL,
 )
 PII_SNIPPET_LENGTH = 64
+MAX_PII_FILE_BYTES = 25 * 2**20
+MAX_PII_LINE_BYTES = 65_536
 
 # Networking / path limits
 MAX_WIN32_PATH = 255

@@ -662,10 +662,28 @@ def _win32_group_membership(
     resolve_nests: bool = True,
     nest_name: str = "",
     scan_date: datetime.datetime | None = None,
+    _root_domain: str | None = None,
+    _root_group: str | None = None,
+    _visited: set[tuple[str, str]] | None = None,
 ) -> pd.DataFrame:  # pragma: no cover - Windows-only
-    """Query Active Directory group members via Win32 NetGroupGetUsers / NetLocalGroupGetMembers."""
+    """Query Active Directory group members recursively via Win32 NetAPI.
+
+    Tracks both direct group-to-group memberships and recursively expanded nested
+    members (recording the nested group path in ``member.nestedACL``) while guarding
+    against cyclic group memberships via ``_visited``.
+    """
     if scan_date is None:
         scan_date = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    root_domain = _root_domain if _root_domain is not None else domain
+    root_group = _root_group if _root_group is not None else group
+    visited = _visited if _visited is not None else set()
+    visit_key = (domain.lower(), group.lower())
+    if visit_key in visited:
+        return pd.DataFrame(
+            columns=["Domain", "ACL", "member.logon", "member.nestedACL", "scan_date"]
+        )
+    visited.add(visit_key)
+
     try:
         dc_info = _win32security.DsGetDcName(domainName=domain)
         server = dc_info["DomainControllerName"]
@@ -673,6 +691,7 @@ def _win32_group_membership(
         server = None
 
     records: list[dict[str, Any]] = []
+    nested_targets: list[tuple[str, str, str]] = []
     resume = 0
     while True:
         try:
@@ -689,17 +708,62 @@ def _win32_group_membership(
             break
 
         for member in members:
-            member_name = member.get("domainandname") or member.get("name", "")
+            raw_name = str(member.get("domainandname") or member.get("name", ""))
+            if not raw_name:
+                continue
+            member_name = f"{domain}\\{raw_name}" if (domain and "\\" not in raw_name) else raw_name
             records.append(
                 {
-                    "Domain": domain,
-                    "ACL": group,
+                    "Domain": root_domain,
+                    "ACL": root_group,
                     "member.logon": member_name,
                     "member.nestedACL": nest_name,
                     "scan_date": scan_date,
                 }
             )
+            if not resolve_nests:
+                continue
+
+            sub_type = SID_TYPES.get(member.get("sidusage"), "")
+            sub_dom, sub_name = (
+                member_name.split("\\", 1) if "\\" in member_name else (domain, member_name)
+            )
+            if not sub_type:
+                try:
+                    _sid, resolved_dom, sid_use = _win32security.LookupAccountName(
+                        server, f"{sub_dom}\\{sub_name}"
+                    )
+                    sub_type = SID_TYPES.get(sid_use, "")
+                    if resolved_dom:
+                        sub_dom = str(resolved_dom)
+                except Exception:
+                    sub_type = ""
+
+            if sub_type in ("Group", "Alias"):
+                nested_targets.append((sub_dom, sub_name, sub_type))
         if not resume:
             break
 
-    return pd.DataFrame.from_records(records)
+    frames = [pd.DataFrame.from_records(records)] if records else []
+    for sub_dom, sub_name, sub_type in nested_targets:
+        sub_label = f"{sub_dom}\\{sub_name}" if sub_dom else sub_name
+        child_nest = f"{nest_name} -> {sub_label}" if nest_name else sub_label
+        child_df = _win32_group_membership(
+            domain=sub_dom,
+            group=sub_name,
+            acl_type=sub_type,
+            resolve_nests=True,
+            nest_name=child_nest,
+            scan_date=scan_date,
+            _root_domain=root_domain,
+            _root_group=root_group,
+            _visited=visited,
+        )
+        if not child_df.empty:
+            frames.append(child_df)
+
+    if not frames:
+        return pd.DataFrame(
+            columns=["Domain", "ACL", "member.logon", "member.nestedACL", "scan_date"]
+        )
+    return pd.concat(frames, ignore_index=True).drop_duplicates()

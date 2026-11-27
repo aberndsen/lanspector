@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import os
 import pathlib
+import stat
 import subprocess
 import sys
 from collections.abc import Iterator
@@ -28,7 +29,7 @@ from sqlalchemy import (
     inspect,
     text,
 )
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool, StaticPool
 from tqdm import tqdm
 
 from lanspector.constants import (
@@ -42,10 +43,12 @@ from lanspector.constants import (
     PII_TABLE_SUFFIX,
     PII_WORDS_TABLE_SUFFIX,
     PROGRESS_LOG_INTERVAL,
+    SAFE_TABLE_NAME_REGEX,
     SHARE_PERM_TABLE_SUFFIX,
     SUPPORTED_DB_EXTENSIONS,
     SUPPORTED_OUTPUT_EXTENSIONS,
     TIMESTAMP_FORMAT,
+    XLSX_SAFE_OPTIONS,
 )
 from lanspector.datatypes import CrawlEntry, CrawlResult, PermissionEntry, PiiFinding, ScanType
 from lanspector.pii import scan_file_for_pii
@@ -153,7 +156,7 @@ def crawl(
     ret_dirs = "d" in scantype
     ret_files = "f" in scantype
     t_start = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-    table = tablename or t_start.strftime(TIMESTAMP_FORMAT)
+    table = _validate_table_name(tablename or t_start.strftime(TIMESTAMP_FORMAT))
 
     out_path = pathlib.Path(fout) if fout is not None else None
     engine: Engine | None = None
@@ -339,7 +342,10 @@ def crawl(
     if out_path is not None and out_ext == ".csv":
         files_df.to_csv(out_path, index=False)
     elif out_path is not None and out_ext == ".xlsx":
-        files_df.to_excel(out_path, index=False)
+        with pd.ExcelWriter(
+            out_path, engine="xlsxwriter", engine_kwargs={"options": XLSX_SAFE_OPTIONS}
+        ) as writer:
+            files_df.to_excel(writer, index=False)
 
     report_path: pathlib.Path | None = None
     sunburst_out: pathlib.Path | None = None
@@ -405,7 +411,7 @@ def crawl_driver(settings: CrawlSettings) -> list[pathlib.Path]:
 
     out_dir = settings.driver_out or pathlib.Path.cwd()
     out_dir.mkdir(parents=True, exist_ok=True)
-    table = settings.tablename or datetime.datetime.now(datetime.UTC).strftime(TIMESTAMP_FORMAT)
+    table = datetime.datetime.now(datetime.UTC).strftime(TIMESTAMP_FORMAT)
 
     targets: list[tuple[str, pathlib.Path]] = []
     from lanspector.shares import list_all_shares_in_domain, list_shares
@@ -459,20 +465,29 @@ def crawl_driver(settings: CrawlSettings) -> list[pathlib.Path]:
             detect_pii_content=settings.detect_pii,
             use_ner=settings.use_ner,
             resume=settings.resume,
+            show_progress=False,
         )
         return db_path
 
+    succeeded_dbs: list[pathlib.Path] = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(_run_one, t_path, db_path) for t_path, db_path in targets]
-        for fut in as_completed(futures):
-            fut.result()
+        future_map = {
+            executor.submit(_run_one, t_path, db_path): (t_path, db_path)
+            for t_path, db_path in targets
+        }
+        for fut in as_completed(future_map):
+            t_path, db_path = future_map[fut]
+            try:
+                succeeded_dbs.append(fut.result())
+            except Exception as exc:
+                logger.error("Driver crawl failed for {} ({}): {}", t_path, db_path, exc)
 
-    if db_paths:
+    if succeeded_dbs:
         from lanspector.reporting import generate_open_shares_summary_report
 
-        generate_open_shares_summary_report(db_paths, out_dir / "open_shares_report.xlsx")
+        generate_open_shares_summary_report(succeeded_dbs, out_dir / "open_shares_report.xlsx")
 
-    return db_paths
+    return succeeded_dbs
 
 
 def yield_filesystem(
@@ -535,7 +550,9 @@ def yield_filesystem(
     file_entries: list[tuple[CrawlEntry, list[PermissionEntry] | None, list[PiiFinding]]] = []
     dir_size = 0
     dir_md5_hash = (
-        hashlib.md5() if (not ret_files and max_md5 is not None and not dir_already_done) else None
+        hashlib.md5(usedforsecurity=False)
+        if (not ret_files and max_md5 is not None and not dir_already_done)
+        else None
     )
     dir_pii: list[PiiFinding] = []
 
@@ -561,14 +578,20 @@ def yield_filesystem(
                         st = item.stat(follow_symlinks=False)
                     except OSError:
                         continue
+                    is_regular_file = not is_symlink and stat.S_ISREG(st.st_mode)
                     file_size = st.st_size
                     if not skip_size:
                         dir_size += file_size
-                    if dir_md5_hash is not None and max_md5 is not None and file_size <= max_md5:
+                    if (
+                        is_regular_file
+                        and dir_md5_hash is not None
+                        and max_md5 is not None
+                        and file_size <= max_md5
+                    ):
                         digest = md5sum(item.path)
                         if digest:
                             dir_md5_hash.update(digest.encode("ascii"))
-                    if detect_pii_content:
+                    if is_regular_file and detect_pii_content:
                         dir_pii.extend(scan_file_for_pii(item.path, use_ner=use_ner))
                     continue
 
@@ -580,9 +603,10 @@ def yield_filesystem(
                 except OSError:
                     continue
 
+                is_regular_file = not is_symlink and stat.S_ISREG(st.st_mode)
                 file_size = st.st_size
                 file_md5: str | None = None
-                if max_md5 is not None and file_size <= max_md5:
+                if is_regular_file and max_md5 is not None and file_size <= max_md5:
                     file_md5 = md5sum(item.path)
 
                 file_entry = CrawlEntry(
@@ -598,7 +622,9 @@ def yield_filesystem(
                 )
                 file_perms = get_effective_permissions(item.path) if permissions else None
                 file_pii = (
-                    scan_file_for_pii(item.path, use_ner=use_ner) if detect_pii_content else []
+                    scan_file_for_pii(item.path, use_ner=use_ner)
+                    if (is_regular_file and detect_pii_content)
+                    else []
                 )
                 file_entries.append((file_entry, file_perms, file_pii))
     except OSError as exc:
@@ -667,7 +693,9 @@ def convert_to_sqlite(
         raise FileNotFoundError(f"Input file not found: {src}")
 
     dst = pathlib.Path(fout) if fout is not None else src.with_suffix(".db")
-    table = crawldate or datetime.datetime.now(datetime.UTC).strftime(TIMESTAMP_FORMAT)
+    table = _validate_table_name(
+        crawldate or datetime.datetime.now(datetime.UTC).strftime(TIMESTAMP_FORMAT)
+    )
 
     ext = src.suffix.lower()
     if ext == ".csv":
@@ -754,21 +782,32 @@ def crawl_by_existing_dbs(
 def create_crawl_engine(db_path: str | pathlib.Path) -> Engine:
     """Create a SQLAlchemy 2.x SQLite engine configured for LANspector crawls.
 
+    Uses :class:`~sqlalchemy.pool.NullPool` for file-backed SQLite databases so
+    multi-threaded callers (such as LANdash) never share a single raw SQLite
+    connection across concurrent threads, reserving :class:`~sqlalchemy.pool.StaticPool`
+    only for ``:memory:`` databases.
+
     Parameters
     ----------
     db_path
-        Path to the SQLite database file.
+        Path to the SQLite database file (or ``":memory:"``).
 
     Returns
     -------
     sqlalchemy.Engine
         Configured SQLAlchemy engine.
     """
+    if str(db_path) == ":memory:":
+        return create_engine(
+            "sqlite:///:memory:",
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
     resolved = pathlib.Path(db_path).resolve()
     return create_engine(
         f"sqlite:///{resolved}",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
+        poolclass=NullPool,
     )
 
 
@@ -793,7 +832,7 @@ def md5sum(
     str
         Lowercase hexadecimal MD5 digest (or empty string if unreadable).
     """
-    digest = hashlib.md5()
+    digest = hashlib.md5(usedforsecurity=False)
     try:
         with open_read_noatime(filename, binary=True) as handle:
             blocks = 0
@@ -916,12 +955,23 @@ def _load_existing_crawl_state(
     tablename: str,
 ) -> tuple[int, set[tuple[str, str | None]]]:
     """Load the next primary-key Id and set of already-persisted (path, fname) pairs."""
+    safe_table = _validate_table_name(tablename)
     with engine.connect() as conn:
-        max_id = conn.execute(text(f"SELECT COALESCE(MAX(Id), -1) FROM [{tablename}]")).scalar()
-        rows = conn.execute(text(f"SELECT path, fname FROM [{tablename}]")).fetchall()
+        max_id = conn.execute(text(f"SELECT COALESCE(MAX(Id), -1) FROM [{safe_table}]")).scalar()
+        rows = conn.execute(text(f"SELECT path, fname FROM [{safe_table}]")).fetchall()
     next_id = int(max_id) + 1 if max_id is not None else 0
     existing_keys = {(str(row[0]), None if row[1] is None else str(row[1])) for row in rows}
     return next_id, existing_keys
+
+
+def _validate_table_name(tablename: str) -> str:
+    """Ensure *tablename* contains only safe alphanumeric/underscore SQLite identifier characters."""
+    if not SAFE_TABLE_NAME_REGEX.fullmatch(tablename):
+        raise ValueError(
+            f"Invalid crawl table name {tablename!r}; only alphanumeric characters and "
+            "underscores are permitted."
+        )
+    return tablename
 
 
 def _flush_sqlite_chunk(

@@ -26,6 +26,7 @@ from lanspector.constants import (
     PERM_TABLE_SUFFIX,
     PII_TABLE_SUFFIX,
     PII_WORDS_TABLE_SUFFIX,
+    SAFE_TABLE_NAME_REGEX,
     SHARE_PERM_TABLE_SUFFIX,
     SUPPORTED_DB_EXTENSIONS,
     TIMESTAMP_FORMAT,
@@ -2237,11 +2238,13 @@ class CrawlReader:
         table
             Crawl table name to remove.
         """
+        _validate_table_identifier(table)
         existing = set(self.tables)
         to_drop = [table, *(f"{table}{sfx}" for sfx in AUXILIARY_TABLE_SUFFIXES)]
         with self.engine.begin() as conn:
             for name in to_drop:
                 if name in existing:
+                    _validate_table_identifier(name)
                     conn.execute(text(f"DROP TABLE IF EXISTS [{name}]"))
             if CRAWL_INFO_TABLE in existing:
                 conn.execute(
@@ -2451,18 +2454,25 @@ class CrawlReader:
         )
 
     def _resolve_table(self, table: str | None) -> str | None:
-        """Resolve *table* or fall back to :attr:`latest_crawl`."""
-        return table if table is not None else self.latest_crawl
+        """Resolve and validate *table*, or fall back to :attr:`latest_crawl`."""
+        resolved = table if table is not None else self.latest_crawl
+        if resolved is None:
+            return None
+        _validate_table_identifier(resolved)
+        if resolved not in self.tables:
+            raise ValueError(f"Crawl table {resolved!r} does not exist in {self.fname.name}.")
+        return resolved
 
     def _resolve_two_tables(self, table1: str | None, table2: str | None) -> tuple[str, str]:
-        """Resolve a pair of crawl tables for comparison, defaulting to the latest two."""
+        """Resolve and validate a pair of crawl tables for comparison."""
         crawls = self.crawls
         if len(crawls) < 2 and (table1 is None or table2 is None):
             raise ValueError(
                 f"At least two crawls are required for comparison (found {len(crawls)})."
             )
-        t1 = table1 or crawls[-2]
-        t2 = table2 or crawls[-1]
+        t1 = self._resolve_table(table1 or crawls[-2])
+        t2 = self._resolve_table(table2 or crawls[-1])
+        assert t1 is not None and t2 is not None
         return t1, t2
 
 
@@ -2850,3 +2860,13 @@ def _table_to_dt(tablename: str) -> datetime.datetime | None:
         except ValueError:
             continue
     return None
+
+
+def _validate_table_identifier(tablename: str) -> str:
+    """Validate that *tablename* is a safe alphanumeric/underscore SQLite identifier."""
+    if not SAFE_TABLE_NAME_REGEX.fullmatch(tablename):
+        raise ValueError(
+            f"Invalid crawl table name {tablename!r}; only alphanumeric characters and "
+            "underscores are permitted."
+        )
+    return tablename

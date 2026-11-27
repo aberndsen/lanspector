@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import html
 import json
 import pathlib
 import re
@@ -205,7 +206,8 @@ def build_sunburst_hover_text(hierarchy: pd.DataFrame) -> list[str]:
         ts.strftime("%Y-%m-%d") if pd.notna(ts) else "n/a" for ts in hierarchy["max_atime"]
     ]
     return [
-        f"<b>{label}</b><br>Path: {node_id}<br>Size: {hsize} ({pct:.1f}%)<br>Last Access: {atime}"
+        f"<b>{html.escape(str(label))}</b><br>Path: {html.escape(str(node_id))}"
+        f"<br>Size: {hsize} ({pct:.1f}%)<br>Last Access: {atime}"
         for label, node_id, hsize, pct, atime in zip(
             hierarchy["label"],
             hierarchy["id"],

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import pathlib
+import re
 from collections.abc import Sequence
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
@@ -13,7 +14,12 @@ import pandas as pd
 from loguru import logger
 from xlsxwriter.utility import xl_rowcol_to_cell
 
-from lanspector.constants import BYTE_UNIT_PREFIXES, PII_KEYWORDS, TIMESTAMP_FORMAT
+from lanspector.constants import (
+    BYTE_UNIT_PREFIXES,
+    PII_KEYWORDS,
+    TIMESTAMP_FORMAT,
+    XLSX_SAFE_OPTIONS,
+)
 from lanspector.datatypes import ExecutiveSummary
 from lanspector.reader import CrawlReader, MultiDB
 
@@ -107,7 +113,7 @@ def generate_fileshare_report(
             users_df = _call_reader(reader_obj, "users", table=tbl, subdir=subdir)
             if isinstance(users_df, pd.DataFrame) and "owner" in users_df.columns:
                 for user_name in users_df["owner"].dropna().unique().tolist():
-                    safe_user = str(user_name).replace("/", "_").replace("\\", "_")
+                    safe_user = _sanitize_filename_token(str(user_name))
                     user_fout = out_path.with_name(f"{out_path.stem}_{safe_user}{out_path.suffix}")
                     generate_fileshare_report(
                         reader_obj,
@@ -126,7 +132,9 @@ def generate_fileshare_report(
                         report_pii=report_pii,
                     )
 
-        with pd.ExcelWriter(out_path, engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(
+            out_path, engine="xlsxwriter", engine_kwargs={"options": XLSX_SAFE_OPTIONS}
+        ) as writer:
             book = writer.book
             rotated_header = book.add_format({"rotation": 45, "bold": True})
             bold_title = book.add_format({"bold": True, "font_size": 12})
@@ -419,7 +427,9 @@ def generate_open_shares_summary_report(
         out_path = version_adder(fout, extension=".xlsx")
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with pd.ExcelWriter(out_path, engine="xlsxwriter") as writer:
+        with pd.ExcelWriter(
+            out_path, engine="xlsxwriter", engine_kwargs={"options": XLSX_SAFE_OPTIONS}
+        ) as writer:
             ws = writer.book.add_worksheet("Open Shares")
             ws.write("A1", "LANspector Open Shares Summary Report")
             ws.write(
@@ -619,6 +629,12 @@ def _call_reader(reader_obj: CrawlReader | MultiDB, method_name: str, **kwargs: 
     if isinstance(reader_obj, MultiDB):
         return reader_obj.query(method_name, **kwargs)
     return getattr(reader_obj, method_name)(**kwargs)
+
+
+def _sanitize_filename_token(raw: str) -> str:
+    """Sanitize untrusted strings (such as usernames) for safe filename interpolation."""
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", raw).strip("._")
+    return cleaned or "unknown"
 
 
 def _coerce_reader(
