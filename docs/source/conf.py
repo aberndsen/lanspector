@@ -57,6 +57,8 @@ intersphinx_mapping = {
 html_theme = "pydata_sphinx_theme"
 html_title = f"LANspector {release} — Fileshare ACL Auditing & Storage Analytics"
 html_static_path: list[str] = ["_static"]
+html_logo = "_static/lanspector-logo.png"
+html_favicon = "_static/favicon.png"
 html_extra_path: list[str] = [
     "_static/robots.txt",
     "_static/llms.txt",
@@ -114,23 +116,53 @@ _JSON_LD_PAYLOAD = json.dumps(
                 "name": "LANspector",
                 "alternateName": ["lanspector", "LANdash"],
                 "applicationCategory": "DeveloperApplication",
-                "operatingSystem": "Cross-platform (Python 3.11+)",
+                "operatingSystem": "Cross-platform (Windows, Linux, macOS — Python 3.11+)",
                 "softwareVersion": release,
                 "license": "https://opensource.org/licenses/MIT",
                 "url": html_baseurl,
+                "image": f"{html_baseurl}_static/lanspector-architecture.jpg",
                 "downloadUrl": "https://pypi.org/project/lanspector/",
                 "codeRepository": "https://github.com/aberndsen/lanspector",
                 "description": _SEO_DESCRIPTION,
                 "keywords": (
-                    "ntfs acl audit python, sox fileshare permissions report, parent vs child acl diff, "
-                    "dumpsec alternative, varonis alternative, plotly storage sunburst, lan cleanup"
+                    "ntfs acl audit python, windows fileshare permissions audit, sox fileshare "
+                    "permissions report, soc 2 file access review, parent vs child acl diff, "
+                    "dumpsec alternative, varonis alternative, active directory group membership "
+                    "audit, smb share enumeration python, pii file scanner, duplicate file finder, "
+                    "plotly storage sunburst, lan cleanup, sqlite filesystem crawler"
                 ),
+                "featureList": [
+                    "Windows NTFS DACL, SMB share permission, and Active Directory nested group harvesting",
+                    "Cross-platform POSIX permission and metadata crawling into SQLite with crash-resume",
+                    "Lossless parent-vs-child permission compression and file-vs-folder access elevation detection",
+                    "Multi-sheet SOX / SOC 2 Excel audit workbooks, open-share reports, duplicate/backup and PII detection",
+                    "Offline interactive Plotly storage sunburst charts colored by last-access staleness",
+                    "Optional offline-ready Dash 3+ LANdash governance dashboard with permission drift timelines",
+                ],
                 "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
                 "author": {
                     "@type": "Person",
                     "name": "Aaron Berndsen",
                     "email": "aaron.berndsen@gmail.com",
                     "url": "https://www.linkedin.com/in/aberndsen/",
+                },
+            },
+            {
+                "@type": "ProfessionalService",
+                "name": "LANspector Enterprise Consulting — Aaron Berndsen",
+                "url": f"{html_baseurl}consulting.html",
+                "description": (
+                    "Enterprise consulting for fileshare governance, SOX / SOC 2 / OSFI access "
+                    "reviews, NTFS ACL remediation, and open-source auditing pipelines."
+                ),
+                "provider": {
+                    "@type": "Person",
+                    "name": "Aaron Berndsen",
+                    "email": "aaron.berndsen@gmail.com",
+                    "sameAs": [
+                        "https://www.linkedin.com/in/aberndsen/",
+                        "https://github.com/aberndsen",
+                    ],
                 },
             },
         ],
@@ -157,7 +189,9 @@ def _inject_seo_and_jsonld(
         f'\n<meta property="og:url" content="{page_url}" />'
         f'\n<meta property="og:title" content="{escape(page_title)}" />'
         f'\n<meta property="og:description" content="{escape(_SEO_DESCRIPTION)}" />'
-        f'\n<meta name="twitter:card" content="summary" />'
+        f'\n<meta property="og:image" content="{html_baseurl}_static/lanspector-architecture.jpg" />'
+        f'\n<meta name="twitter:image" content="{html_baseurl}_static/lanspector-architecture.jpg" />'
+        f'\n<meta name="twitter:card" content="summary_large_image" />'
         f'\n<meta name="twitter:title" content="{escape(page_title)}" />'
         f'\n<meta name="twitter:description" content="{escape(_SEO_DESCRIPTION)}" />'
         f'\n<script type="application/ld+json">{_JSON_LD_PAYLOAD}</script>\n'
@@ -189,7 +223,18 @@ def _generate_sitemap(app: object, exception: Exception | None) -> None:
     for docname in doc_names:
         rel = f"{docname}.html"
         loc = html_baseurl if rel == "index.html" else f"{html_baseurl}{rel}"
-        priority = "1.0" if rel in {"index.html", "usage.html", "auditing_guide.html"} else "0.8"
+        priority = (
+            "1.0"
+            if rel
+            in {
+                "index.html",
+                "usage.html",
+                "auditing_guide.html",
+                "sunburst_dashboard_guide.html",
+                "consulting.html",
+            }
+            else "0.8"
+        )
         urls.append(
             f"  <url>\n    <loc>{escape(loc)}</loc>\n    <lastmod>{today}</lastmod>\n    <priority>{priority}</priority>\n  </url>"
         )

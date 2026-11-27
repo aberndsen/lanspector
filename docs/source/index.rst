@@ -1,6 +1,6 @@
 .. meta::
-   :description: Cross-platform Windows & LAN fileshare auditor with compressed parent-vs-child SOX permission-diff Excel reports, interactive Plotly storage sunbursts, and an optional Dash web dashboard.
-   :keywords: ntfs acl audit python, sox fileshare permissions, parent vs child acl diff, dumpsec alternative, plotly storage sunburst, lan cleanup, windows shares python
+   :description: Cross-platform Windows & LAN fileshare auditor with compressed parent-vs-child SOX permission-diff Excel reports, Active Directory ACL analysis, PII scanning, interactive Plotly storage sunbursts, and an optional offline Dash web dashboard.
+   :keywords: ntfs acl audit python, windows fileshare audit, sox fileshare permissions, soc 2 file access review, parent vs child acl diff, dumpsec alternative, varonis alternative, smb share permissions python, active directory group audit, pii scanner, plotly storage sunburst, lan cleanup, sqlite filesystem crawler
 
 LANspector Documentation
 ========================
@@ -21,6 +21,11 @@ for auditing unstructured network fileshares and local filesystems:
 3. **Accelerate storage cleanup with interactive Plotly sunbursts & LANdash**:
    Export offline-ready interactive Plotly sunburst HTML charts colored by last-access
    staleness, or serve the optional ``lanspector[dashboard]`` multi-share web app.
+
+.. image:: _static/lanspector-architecture.jpg
+   :alt: Windows SMB shares, Active Directory groups, POSIX filesystems, and SQLite crawl snapshots flow through LANspector into SOX permission-diff Excel reports, interactive Plotly storage sunbursts, and LANdash
+   :align: center
+   :width: 100%
 
 Quick Start
 -----------

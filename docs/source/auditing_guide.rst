@@ -1,3 +1,7 @@
+.. meta::
+   :description: SOX, SOC 2, and ISO 27001 fileshare auditing guide: lossless parent-vs-child NTFS/POSIX ACL compression, file-vs-folder permission elevation detection, open shares, duplicates, and PII scanning.
+   :keywords: sox fileshare audit, parent vs child acl compression, ntfs permission elevation, open shares report, everyone access audit, pii content scan, duplicate files md5, permission drift detection
+
 SOX Auditing & Permission Analytics
 ===================================
 
@@ -7,6 +11,11 @@ Parent-vs-Child Permission Compression
 :meth:`lanspector.reader.CrawlReader.parent_vs_child_report` compares every subfolder's
 effective permissions against its immediate parent folder. Only the crawl root and folders
 where permissions change are emitted, achieving lossless compression across massive trees.
+
+.. image:: _static/sample-sox-report.jpg
+   :alt: Sample LANspector SOX Excel audit workbook showing the compressed parent_vs_child permission matrix and worksheet tabs
+   :align: center
+   :width: 100%
 
 Permission Codes
 ~~~~~~~~~~~~~~~~

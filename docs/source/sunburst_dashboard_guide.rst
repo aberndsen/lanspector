@@ -1,3 +1,7 @@
+.. meta::
+   :description: Interactive offline Plotly storage sunburst charts colored by last-access staleness and the self-hosted Dash 3+ LANdash multi-share governance web dashboard.
+   :keywords: plotly storage sunburst, disk space visualizer python, stale data cleanup heatmap, landash dashboard, dash fileshare governance, acl membership network graph, air-gapped plotly html
+
 Storage Sunbursts & LANdash Web App
 ===================================
 
@@ -15,6 +19,11 @@ With ``--include_plotlyjs inline`` (the default), the generated HTML embeds Plot
 it opens cleanly on air-gapped or restricted corporate networks. Click any ring to zoom in, hover
 for exact byte sizes and last-access dates, and use the ``age`` color scale to highlight large,
 stale folders ripe for archiving or cleanup.
+
+.. image:: _static/sample-sunburst-report.jpg
+   :alt: Sample LANspector offline Plotly storage sunburst chart colored by days since last access with auto-scaled GB hover tooltip
+   :align: center
+   :width: 100%
 
 Optional LANdash Multi-Share Dashboard
 --------------------------------------
