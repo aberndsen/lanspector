@@ -33,7 +33,7 @@ Instead of dumping 200,000 repetitive rows, `parent_vs_child_report` outputs the
 | `/share/finance` | `R` | |
 | `/share/finance/q1/archive/2025` | `R` | `M` |
 
-Reading this is lossless: `/share/finance/q1` and `/share/finance/q1/archive` are omitted because their permissions match `/share/finance`, while `2025` appears because `ACL2` gained `(M)odify` access there. The companion `file_vs_folderACL` sheet flags individual files granting *more* permissions than their containing directory.
+Reading this is lossless: `/share/finance/q1` and `/share/finance/q1/archive` are omitted because their permissions match `/share/finance`, while `2025` appears because `ACL2` gained `(M)odify` access there. The companion [`file_vs_folderACL`](https://aberndsen.github.io/lanspector/auditing_guide.html#file-vs-folder-acl) sheet flags individual files granting *more* permissions than their containing directory.
 
 ## Sample Reports
 

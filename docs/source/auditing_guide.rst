@@ -29,6 +29,8 @@ Permission Codes
 Pass ``use_permission_hierarchy=True`` to collapse subordinate bits (e.g. ``MR`` becomes ``M``
 and ``F`` dominates lower grants) so audits focus on effective privileges rather than raw DACL noise.
 
+.. _file-vs-folder-acl:
+
 File-vs-Folder Elevated Access
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
