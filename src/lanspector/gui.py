@@ -296,9 +296,12 @@ class LanSpectorGui(tk.Tk):
         if not db_str:
             messagebox.showwarning("LANspector", "Please select a crawl database first.")
             return
-        out = self.report_out_var.get().strip() or str(
-            pathlib.Path(tempfile.gettempdir()) / "lanspector_summary.xlsx"
-        )
+        out = self.report_out_var.get().strip()
+        if not out:
+            with tempfile.NamedTemporaryFile(
+                prefix="lanspector_summary_", suffix=".xlsx", delete=False
+            ) as tmp_file:
+                out = tmp_file.name
         tbl = self.selected_table_var.get() or None
 
         def _task() -> None:
@@ -312,7 +315,10 @@ class LanSpectorGui(tk.Tk):
         if not db_str:
             messagebox.showwarning("LANspector", "Please select a crawl database first.")
             return
-        out = pathlib.Path(tempfile.gettempdir()) / "lanspector_sunburst.html"
+        with tempfile.NamedTemporaryFile(
+            prefix="lanspector_sunburst_", suffix=".html", delete=False
+        ) as tmp_file:
+            out = pathlib.Path(tmp_file.name)
         tbl = self.selected_table_var.get() or None
 
         def _task() -> None:

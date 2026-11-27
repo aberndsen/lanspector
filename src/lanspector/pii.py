@@ -9,7 +9,13 @@ import re
 import openpyxl
 from loguru import logger
 
-from lanspector.constants import PII_KEYWORDS, PII_PROPER_NAME_LABEL, PII_SNIPPET_LENGTH
+from lanspector.constants import (
+    MAX_PII_FILE_BYTES,
+    MAX_PII_LINE_BYTES,
+    PII_KEYWORDS,
+    PII_PROPER_NAME_LABEL,
+    PII_SNIPPET_LENGTH,
+)
 from lanspector.datatypes import PiiFinding
 from lanspector.platform import open_read_noatime
 
@@ -121,7 +127,11 @@ def count_pii_name_matches(path: str | None, fname: str | None) -> int:
     return len(_PII_NAME_REGEX.findall(combined))
 
 
-def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
+def extract_file_text(
+    path: str | pathlib.Path,
+    max_rows: int = 10,
+    max_bytes: int = MAX_PII_FILE_BYTES,
+) -> str:
     """Read up to *max_rows* of text from a supported text or Excel file.
 
     Parameters
@@ -130,6 +140,9 @@ def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
         Path to the file to read.
     max_rows
         Maximum lines (text/CSV) or rows per worksheet (Excel) to read.
+    max_bytes
+        Maximum file size in bytes eligible for content inspection (guards against
+        oversized files and compressed spreadsheet zip bombs).
 
     Returns
     -------
@@ -138,6 +151,22 @@ def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
     """
     file_path = pathlib.Path(path)
     suffix = file_path.suffix.lower()
+    if suffix not in _TEXT_EXTENSIONS and suffix not in _EXCEL_EXTENSIONS:
+        return ""
+
+    try:
+        st = file_path.lstat()
+        if st.st_size > max_bytes:
+            logger.debug(
+                "Skipping PII content scan for oversized file {} ({} bytes > {} limit).",
+                file_path,
+                st.st_size,
+                max_bytes,
+            )
+            return ""
+    except OSError as exc:
+        logger.debug("Could not stat file {}: {}", file_path, exc)
+        return ""
 
     if suffix in _TEXT_EXTENSIONS:
         try:
@@ -146,7 +175,7 @@ def extract_file_text(path: str | pathlib.Path, max_rows: int = 10) -> str:
                 file_path, binary=False, encoding="utf-8", errors="ignore"
             ) as handle:
                 for _ in range(max_rows):
-                    line = handle.readline()
+                    line = handle.readline(MAX_PII_LINE_BYTES)
                     if not line:
                         break
                     lines.append(line.strip())

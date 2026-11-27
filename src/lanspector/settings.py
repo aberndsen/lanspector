@@ -57,8 +57,6 @@ class CrawlSettings:
         Generate a formatted Excel audit report alongside the SQLite database (default ``True``).
     sunburst_html
         Optional path to export a standalone interactive Plotly storage sunburst HTML file.
-    tablename
-        Explicit crawl timestamp table name (defaults to UTC ``YYYYMMDDTHHMMSS``).
     resume
         Resume an interrupted crawl (where ``scan_end`` is ``NULL`` in ``CRAWL_INFO``)
         in ``fout``, skipping already-persisted directories and files.
@@ -84,7 +82,6 @@ class CrawlSettings:
     use_ner: bool = False
     summarize: bool = True
     sunburst_html: pathlib.Path | None = None
-    tablename: str | None = None
     resume: bool = False
     n_procs: int | None = None
     log_level: LogLevel = "INFO"
