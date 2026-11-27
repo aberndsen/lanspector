@@ -1,4 +1,4 @@
-# LANspector
+# <img src="https://raw.githubusercontent.com/aberndsen/lanspector/main/docs/source/_static/lanspector-logo.png" alt="LANspector logo" width="42" align="absmiddle"> LANspector
 
 [![PyPI version](https://img.shields.io/pypi/v/lanspector.svg)](https://pypi.org/project/lanspector/)
 [![Python versions](https://img.shields.io/pypi/pyversions/lanspector.svg)](https://pypi.org/project/lanspector/)
@@ -8,6 +8,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/aberndsen/lanspector/blob/main/LICENSE)
 
 **Cross-platform LAN & Windows fileshare auditor (`lanspector`)** — harvest directory/file metadata (`atime`/`ctime`/`mtime`, owner, size, MD5, PII indicators) and NTFS/POSIX ACLs into timestamped SQLite databases, generate **losslessly compressed parent-vs-child SOX permission-diff Excel reports**, and explore storage hotspots with **interactive Plotly sunburst charts** and an optional **Dash web dashboard (`lanspector[dashboard]`)**.
+
+![LANspector architecture: Windows SMB shares, Active Directory groups, POSIX filesystems, and SQLite crawl snapshots flow through LANspector into SOX permission-diff Excel reports, interactive Plotly storage sunbursts, and the LANdash governance web app](https://raw.githubusercontent.com/aberndsen/lanspector/main/docs/source/_static/lanspector-architecture.jpg)
 
 ## Why LANspector?
 

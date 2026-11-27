@@ -1,3 +1,7 @@
+.. meta::
+   :description: LANspector CLI and YAML configuration guide: crawl Windows SMB shares or POSIX folders with crash-resume, generate SOX Excel audit workbooks, compare snapshots, and serve LANdash.
+   :keywords: lanspector cli, crawl windows shares python, resume filesystem crawl, yaml audit config, jsonargparse cli, excel fileshare report, smb share enumeration
+
 Usage Guide
 ===========
 

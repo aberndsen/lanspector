@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://aberndsen.github.io/lanspector/sitemap.xml
+# AI / LLM Context Discovery (https://llmstxt.org/)
+# Concise index: https://aberndsen.github.io/lanspector/llms.txt
+# Complete guide & recipes: https://aberndsen.github.io/lanspector/llms-full.txt

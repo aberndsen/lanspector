@@ -1,3 +1,7 @@
+.. meta::
+   :description: SOX, SOC 2, and ISO 27001 fileshare auditing guide: lossless parent-vs-child NTFS/POSIX ACL compression, file-vs-folder permission elevation detection, open shares, duplicates, and PII scanning.
+   :keywords: sox fileshare audit, parent vs child acl compression, ntfs permission elevation, open shares report, everyone access audit, pii content scan, duplicate files md5, permission drift detection
+
 SOX Auditing & Permission Analytics
 ===================================
 

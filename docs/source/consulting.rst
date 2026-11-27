@@ -1,3 +1,7 @@
+.. meta::
+   :description: Enterprise fileshare governance, SOX / SOC 2 / OSFI access review automation, NTFS ACL remediation, and open-source LANspector consulting by Aaron Berndsen.
+   :keywords: fileshare governance consulting, sox access review automation, varonis alternative consulting, ntfs acl remediation, python audit pipeline, aaron berndsen
+
 Enterprise Consulting & Support Services
 ========================================
 
