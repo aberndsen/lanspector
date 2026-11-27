@@ -16,8 +16,8 @@ for auditing unstructured network fileshares and local filesystems:
 2. **Generate losslessly compressed SOX permission-diff Excel workbooks**:
    The :meth:`~lanspector.reader.CrawlReader.parent_vs_child_report` algorithm
    compresses hundreds of thousands of folders down to only permission boundaries,
-   while ``file_vs_folderACL`` catches individual files with broader access than
-   their containing folder.
+   while the :ref:`file_vs_folderACL <file-vs-folder-acl>` sheet catches individual
+   files with broader access than their containing folder.
 3. **Accelerate storage cleanup with interactive Plotly sunbursts & LANdash**:
    Export offline-ready interactive Plotly sunburst HTML charts colored by last-access
    staleness, or serve the optional ``lanspector[dashboard]`` multi-share web app.
@@ -58,8 +58,6 @@ Or from Python:
    :hidden:
 
    usage
-   auditing_guide
-   sunburst_dashboard_guide
    api/index
    consulting
 

@@ -134,3 +134,10 @@ Stepwise "Peeling Away the Layers"
 On large fileshares, start with ``--limit 100`` or ``--max_depth 2`` to remediate share-level and
 top-level NTFS entitlements first, then progressively increase depth in subsequent crawls stored
 in the same SQLite database.
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Deep-Dive Guides
+
+   auditing_guide
+   sunburst_dashboard_guide
