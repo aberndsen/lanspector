@@ -35,6 +35,20 @@ Instead of dumping 200,000 repetitive rows, `parent_vs_child_report` outputs the
 
 Reading this is lossless: `/share/finance/q1` and `/share/finance/q1/archive` are omitted because their permissions match `/share/finance`, while `2025` appears because `ACL2` gained `(M)odify` access there. The companion `file_vs_folderACL` sheet flags individual files granting *more* permissions than their containing directory.
 
+## Sample Reports
+
+### Compressed SOX Permission-Diff Excel Workbook (`lanspector report`)
+
+Every audit workbook includes executive `Summary` KPIs, `ACL membership`, compressed `parent_vs_child` permission boundaries, `file_vs_folderACL` elevation checks, `Possible PII Locations`, `Largest Directories`, and `Largest Files`:
+
+![Sample LANspector SOX Excel audit report showing the compressed parent_vs_child permission matrix and audit worksheet tabs](https://raw.githubusercontent.com/aberndsen/lanspector/main/docs/source/_static/sample-sox-report.jpg)
+
+### Offline Interactive Plotly Storage Sunburst (`lanspector sunburst`)
+
+Generate self-contained HTML sunburst charts (`--include_plotlyjs inline`) colored by last-access staleness with auto-scaled `TB`/`GB`/`MB`/`KB` hover tooltips—click any ring to drill into large, stale folders ready for cleanup:
+
+![Sample LANspector offline Plotly storage sunburst chart colored by days since last access with auto-scaled GB hover tooltip](https://raw.githubusercontent.com/aberndsen/lanspector/main/docs/source/_static/sample-sunburst-report.jpg)
+
 ## Installation
 
 Install from [PyPI](https://pypi.org/project/lanspector/):

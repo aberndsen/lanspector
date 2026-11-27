@@ -12,6 +12,11 @@ Parent-vs-Child Permission Compression
 effective permissions against its immediate parent folder. Only the crawl root and folders
 where permissions change are emitted, achieving lossless compression across massive trees.
 
+.. image:: _static/sample-sox-report.jpg
+   :alt: Sample LANspector SOX Excel audit workbook showing the compressed parent_vs_child permission matrix and worksheet tabs
+   :align: center
+   :width: 100%
+
 Permission Codes
 ~~~~~~~~~~~~~~~~
 
