@@ -58,8 +58,6 @@ Or from Python:
    :hidden:
 
    usage
-   auditing_guide
-   sunburst_dashboard_guide
    api/index
    consulting
 
